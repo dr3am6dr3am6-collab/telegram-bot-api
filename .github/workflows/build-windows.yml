@@ -1,23 +1,35 @@
 name: Build Windows Exe
 on: [push, workflow_dispatch]
+
 jobs:
   build:
     runs-on: windows-latest
+    
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: Install gperf
-      run: choco install gperf
+
+    - name: Install dependencies
+      run: |
+        choco install gperf --no-progress
+        choco install openssl --no-progress
+        choco install zlib --no-progress
+
     - name: Configure CMake
-      run: cmake -A x64 -DCMAKE_BUILD_TYPE=Release .
+      run: >
+        cmake -A x64 -DCMAKE_BUILD_TYPE=Release 
+        -DCMAKE_INSTALL_PREFIX:PATH=install 
+        -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL-Win64" 
+        -DZLIB_ROOT="C:/Program Files/zlib" 
+        .
+
     - name: Build
       run: cmake --build . --config Release --target install
+
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4 
+      uses: actions/upload-artifact@v4
       with:
         name: telegram-bot-api-windows
-        path: bin/telegram-bot-api.exe
-
-
-
+        path: install/bin/telegram-bot-api.exe
+        compression-level: 0
